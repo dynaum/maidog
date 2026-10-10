@@ -1,0 +1,42 @@
+# herdr-plugin.toml: maidog renders Mermaid diagrams inside herdr-file-viewer.
+id = "maidog"
+name = "maidog"
+version = "0.1.0"
+min_herdr_version = "0.7.5"
+description = "Render Mermaid diagrams as Unicode art in the herdr file viewer."
+platforms = ["linux", "macos"]
+
+# Uses Node 18+ or Bun with the committed bundle when present, otherwise downloads the
+# release binary for this platform and checks its SHA-256.
+[[build]]
+command = ["/bin/sh", "scripts/build-plugin.sh"]
+
+# Keeps the stable runtime copy current after a plugin update (install folders change).
+[[startup]]
+command = ["/bin/sh", "scripts/run.sh", "herdr", "refresh"]
+
+[[actions]]
+id = "setup-file-viewer"
+title = "maidog: enable Mermaid in the file viewer"
+description = "Point herdr-file-viewer's markdown renderer at maidog."
+command = ["/bin/sh", "scripts/run.sh", "herdr", "setup"]
+
+[[actions]]
+id = "setup-file-viewer-force"
+title = "maidog: enable Mermaid in the file viewer (replace custom renderer)"
+description = "Same as setup, but replaces an existing custom markdown renderer. A backup is kept."
+command = ["/bin/sh", "scripts/run.sh", "herdr", "setup", "--force"]
+
+[[actions]]
+id = "preview"
+title = "maidog: preview a markdown file"
+description = "Open a popup that renders a markdown file with its Mermaid diagrams."
+command = ["/bin/sh", "-c", "exec \"${HERDR_BIN_PATH:-herdr}\" plugin pane open --plugin maidog --entrypoint preview"]
+
+[[panes]]
+id = "preview"
+title = "maidog preview"
+placement = "popup"
+width = "90%"
+height = "90%"
+command = ["/bin/sh", "scripts/preview.sh"]
