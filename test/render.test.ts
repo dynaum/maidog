@@ -75,10 +75,34 @@ describe("renderBlock", () => {
     });
   });
 
-  test("--max-width falls back for wide diagrams", () => {
-    const r = renderBlock("flowchart LR\n  A --> B\n  B --> C\n  C --> D", { ...O, maxWidth: 10 });
+  const widest = (text: string) => Math.max(...text.split("\n").map((l) => [...l].length));
+  const wide = "flowchart LR\n  A[Collect requirements] --> B[Design the API] --> C[Write the tests] --> D[Implement handlers]";
+
+  test("a left-to-right flowchart turns top-down to fit the width", () => {
+    const full = ok(wide);
+    expect(widest(full)).toBeGreaterThan(60);
+    const fitted = ok(wide, { ...O, maxWidth: 60 });
+    expect(widest(fitted)).toBeLessThanOrEqual(60);
+    expect(fitted).toContain("Implement handlers");
+  });
+
+  test("tighter spacing is tried before giving up", () => {
+    const fan = "flowchart TD\n  A --> B\n  A --> C\n  A --> D\n  A --> E";
+    const full = widest(ok(fan));
+    const fitted = ok(fan, { ...O, maxWidth: full - 4 });
+    expect(widest(fitted)).toBeLessThanOrEqual(full - 4);
+  });
+
+  test("a diagram that fits as is keeps its layout", () => {
+    expect(ok("flowchart LR\n  A --> B", { ...O, maxWidth: 200 })).toBe(ok("flowchart LR\n  A --> B"));
+  });
+
+  test("a diagram too wide for every layout falls back with the widths", () => {
+    const r = renderBlock("flowchart LR\n  A[A very long label that cannot shrink at all] --> B", { ...O, maxWidth: 20 });
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.reason).toMatch(/^diagram is \d+ columns wide \(limit 10\)$/);
+    if (!r.ok) {
+      expect(r.reason).toMatch(/^diagram needs \d+ columns but only 20 fit\. Widen the pane or view it full width\.$/);
+    }
   });
 
   test("control bytes in labels never reach the output", () => {

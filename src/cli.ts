@@ -1,8 +1,10 @@
 import pkg from "../package.json" with { type: "json" };
 import { HELP, parseArgs } from "./args";
+import type { RenderOptions } from "./render";
 import { runHerdr } from "./herdr/setup";
 import { runDownstream } from "./pipe";
-import { transformMarkdown } from "./transform";
+import { applyResults, collectMermaidSources, transformMarkdown } from "./transform";
+import { WORKER_ENV, renderWithDeadline, runWorker } from "./worker";
 
 async function readStdin(): Promise<string> {
   if (process.stdin.isTTY) return "";
@@ -11,7 +13,15 @@ async function readStdin(): Promise<string> {
   return Buffer.concat(chunks).toString("utf8");
 }
 
+async function transform(markdown: string, options: RenderOptions): Promise<string> {
+  if (options.timeLimit <= 0) return transformMarkdown(markdown, options);
+  const sources = collectMermaidSources(markdown);
+  if (sources.length === 0) return markdown;
+  return applyResults(markdown, await renderWithDeadline(sources, options));
+}
+
 async function main(argv: string[]): Promise<number> {
+  if (process.env[WORKER_ENV] === "1") return runWorker();
   const parsed = parseArgs(argv);
   switch (parsed.kind) {
     case "help":
@@ -26,7 +36,7 @@ async function main(argv: string[]): Promise<number> {
     case "herdr":
       return runHerdr(parsed.sub, parsed.args);
     case "filter": {
-      const output = transformMarkdown(await readStdin(), parsed.options);
+      const output = await transform(await readStdin(), parsed.options);
       if (parsed.command.length > 0) return runDownstream(parsed.command, output);
       process.stdout.on("error", () => process.exit(0)); // reader went away (e.g. `| head`)
       process.stdout.write(output);

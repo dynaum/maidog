@@ -42,3 +42,14 @@ test("empty input gives empty output", async () => {
   const r = await run([], "");
   expect(r).toEqual({ out: "", err: "", code: 0 });
 });
+
+test("a diagram that draws too slowly falls back within the time limit, the rest still render", async () => {
+  const chain = "flowchart TD\n" + Array.from({ length: 25 }, (_, i) => `  N${i} --> N${i + 1}`).join("\n");
+  const doc = `${md}\n\`\`\`mermaid\n${chain}\n\`\`\`\n`;
+  const start = performance.now();
+  const r = await run(["--time-limit", "1000"], doc);
+  expect(performance.now() - start).toBeLessThan(4000);
+  expect(r.code).toBe(0);
+  expect(r.out).toContain("►");
+  expect(r.out).toContain("> maidog: diagram took too long to draw (over 1 s)");
+}, 10000);
