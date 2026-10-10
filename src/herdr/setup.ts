@@ -18,7 +18,8 @@ type Outcome = { code: number; message: string };
 export async function setup(deps: Deps, force: boolean): Promise<Outcome> {
   const runtime = join(stateDir(deps.env), "runtime");
   const bin = installRuntime(deps, runtime);
-  const style = copyPalette(deps, runtime);
+  const viewer = findViewer(deps);
+  const style = copyPalette(viewer, runtime);
   const configPath = viewerConfigPath(deps);
   const current = existsSync(configPath) ? readFileSync(configPath, "utf8") : null;
   if (current !== null) copyFileSync(configPath, `${configPath}.maidog-backup`);
@@ -35,6 +36,12 @@ export async function setup(deps: Deps, force: boolean): Promise<Outcome> {
     mkdirSync(dirname(configPath), { recursive: true });
     atomicWrite(configPath, result.text);
   }
+  if (viewerTooOld(viewer.version)) {
+    return {
+      code: 0,
+      message: `maidog: config written to ${configPath}, but herdr-file-viewer ${viewer.version} ignores config files. Update it to 1.12.0 or newer: herdr plugin install smarzban/herdr-file-viewer`,
+    };
+  }
   return { code: 0, message: `maidog: file viewer now renders Mermaid diagrams (${configPath})` };
 }
 
@@ -42,7 +49,7 @@ export async function refresh(deps: Deps): Promise<Outcome> {
   const runtime = join(stateDir(deps.env), "runtime");
   if (!existsSync(join(runtime, ".setup"))) return { code: 0, message: "maidog: setup has not run, nothing to refresh" };
   installRuntime(deps, runtime);
-  copyPalette(deps, runtime);
+  copyPalette(findViewer(deps), runtime);
   return { code: 0, message: "maidog: runtime refreshed" };
 }
 
@@ -60,21 +67,40 @@ function installRuntime(deps: Deps, runtime: string): string {
   return bin;
 }
 
-function copyPalette(deps: Deps, runtime: string): string | null {
+type ViewerInfo = { root?: string; version?: string };
+
+// The viewer as herdr reports it, or an empty object when herdr is unavailable.
+function findViewer(deps: Deps): ViewerInfo {
   const listed = deps.herdr(["plugin", "list", "--json"]);
-  if (listed.status !== 0) return null;
+  if (listed.status !== 0) return {};
   try {
     const json = JSON.parse(listed.stdout);
-    const plugins: Array<{ plugin_id?: string; plugin_root?: string }> = Array.isArray(json) ? json : json?.result?.plugins ?? [];
-    const root = plugins.find((p) => p.plugin_id === "herdr-file-viewer")?.plugin_root;
-    const source = root ? join(root, "assets", "markdown-style.json") : "";
-    if (!source || !existsSync(source)) return null;
-    const target = join(runtime, "glow-style.json");
-    atomicCopy(source, target);
-    return target;
+    const plugins: Array<{ plugin_id?: string; plugin_root?: string; version?: string }> = Array.isArray(json)
+      ? json
+      : json?.result?.plugins ?? [];
+    const viewer = plugins.find((p) => p.plugin_id === "herdr-file-viewer");
+    return { root: viewer?.plugin_root, version: viewer?.version };
   } catch {
-    return null;
+    return {};
   }
+}
+
+function copyPalette(viewer: ViewerInfo, runtime: string): string | null {
+  const source = viewer.root ? join(viewer.root, "assets", "markdown-style.json") : "";
+  if (!source || !existsSync(source)) return null;
+  const target = join(runtime, "glow-style.json");
+  atomicCopy(source, target);
+  return target;
+}
+
+// herdr-file-viewer reads config.toml from 1.12.0 on. Older versions ignore it silently.
+const MIN_VIEWER = [1, 12, 0];
+
+function viewerTooOld(version: string | undefined): boolean {
+  const parts = version?.match(/^(\d+)\.(\d+)\.(\d+)/)?.slice(1).map(Number);
+  if (!parts) return false;
+  for (let i = 0; i < 3; i++) if (parts[i] !== MIN_VIEWER[i]) return parts[i] < MIN_VIEWER[i];
+  return false;
 }
 
 function viewerConfigPath(deps: Deps): string {

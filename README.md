@@ -32,7 +32,7 @@ herdr plugin install dynaum/maidog
 herdr plugin action invoke maidog.setup-file-viewer
 ```
 
-Open any markdown file in [herdr-file-viewer](https://github.com/smarzban/herdr-file-viewer) and the diagrams are there. The setup action changes one line in the viewer's config and keeps a backup. Read [docs/herdr.md](docs/herdr.md) for the full guide.
+Open any markdown file in [herdr-file-viewer](https://github.com/smarzban/herdr-file-viewer) 1.12.0 or newer and the diagrams are there. The setup action changes one line in the viewer's config and keeps a backup. Read [docs/herdr.md](docs/herdr.md) for the full guide.
 
 ## Use maidog anywhere
 

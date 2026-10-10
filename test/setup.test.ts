@@ -61,3 +61,25 @@ test("refresh is a no-op before setup and re-copies after", async () => {
   expect((await refresh(deps)).code).toBe(0);
   expect(readFileSync(join(root, "state/runtime/maidog.js"), "utf8")).toBe("console.log(2)");
 });
+
+test("setup warns when the viewer is too old to read config files", async () => {
+  const viewerRoot = join(root, "viewer");
+  deps.herdr = (args) =>
+    args[1] === "list"
+      ? { status: 0, stdout: JSON.stringify({ result: { plugins: [{ plugin_id: "herdr-file-viewer", version: "1.11.0", plugin_root: viewerRoot }] } }) }
+      : { status: 0, stdout: join(root, "viewer-config") + "\n" };
+  const r = await setup(deps, false);
+  expect(r.code).toBe(0);
+  expect(r.message).toContain("herdr-file-viewer 1.11.0 ignores config files");
+  expect(r.message).toContain("herdr plugin install smarzban/herdr-file-viewer");
+  expect(readFileSync(join(root, "viewer-config/config.toml"), "utf8")).toContain("# managed by maidog");
+});
+
+test("setup does not warn for a current viewer", async () => {
+  const viewerRoot = join(root, "viewer");
+  deps.herdr = (args) =>
+    args[1] === "list"
+      ? { status: 0, stdout: JSON.stringify({ result: { plugins: [{ plugin_id: "herdr-file-viewer", version: "1.18.0", plugin_root: viewerRoot }] } }) }
+      : { status: 0, stdout: join(root, "viewer-config") + "\n" };
+  expect((await setup(deps, false)).message).not.toContain("ignores config files");
+});

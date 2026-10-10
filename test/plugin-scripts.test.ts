@@ -28,3 +28,14 @@ test("scripts work when the user exports CDPATH", async () => {
   expect((await new Response(p.stdout).text()).trim()).toMatch(/^maidog \d+\.\d+\.\d+$/);
   expect(await p.exited).toBe(0);
 });
+
+test("preview starts in the focused pane's folder from herdr's context", async () => {
+  const p = Bun.spawn(["/bin/sh", "scripts/preview.sh"], {
+    stdin: "ignore",
+    stdout: "pipe",
+    stderr: "pipe",
+    env: { ...process.env, HERDR_PLUGIN_CONTEXT_JSON: JSON.stringify({ focused_pane_cwd: "/tmp" }) },
+  });
+  expect(await new Response(p.stdout).text()).toContain("maidog preview (in /tmp)");
+  await p.exited;
+});

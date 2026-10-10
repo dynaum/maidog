@@ -5,7 +5,7 @@ maidog plugs into [herdr-file-viewer](https://github.com/smarzban/herdr-file-vie
 ## Requirements
 
 - herdr 0.7.5 or newer
-- herdr-file-viewer, with [glow](https://github.com/charmbracelet/glow) installed
+- herdr-file-viewer 1.12.0 or newer, with [glow](https://github.com/charmbracelet/glow) installed. Older viewers ignore config files. Setup warns when it finds one.
 - macOS or Linux
 
 Node 18+ or Bun makes the install small (1.5 MB). Without either, the plugin downloads a single binary for your platform and checks its SHA-256 first.
@@ -48,8 +48,10 @@ Your old line stays in `config.toml.maidog-backup`.
 ## Updates
 
 ```bash
-herdr plugin update maidog
+herdr plugin install dynaum/maidog --yes
 ```
+
+Reinstalling from GitHub replaces the installed version and keeps your config. Newer herdr releases also offer `herdr plugin update maidog`.
 
 A startup hook copies the new version into the fixed folder the next time the herdr server starts. To apply an update without a restart, run the setup action again.
 
@@ -94,6 +96,18 @@ description = "maidog preview"
   ```
 
 - Look for a note under the block. A line such as `> maidog: pie diagrams are not supported yet` means maidog ran but does not support the type.
+
+### Setup says the viewer ignores config files
+
+herdr-file-viewer reads `config.toml` from version 1.12.0 on. Update the viewer, then reopen it:
+
+```bash
+herdr plugin install smarzban/herdr-file-viewer --yes
+```
+
+### A changed file shows a diff, not the diagram
+
+The viewer opens files with uncommitted or branch changes as a diff. Press `v` to cycle to the rendered markdown view. Set `changed_file_view` in the viewer config to change the default.
 
 ### "Markdown renderer timed out"
 

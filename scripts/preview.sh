@@ -4,7 +4,7 @@ set -u
 root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 start="$HOME"
 if [ -n "${HERDR_PLUGIN_CONTEXT_JSON:-}" ] && command -v node >/dev/null 2>&1; then
-  cwd="$(printf '%s' "$HERDR_PLUGIN_CONTEXT_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(j.cwd||j.pane?.cwd||j.focused_pane?.cwd||"")}catch{}})')"
+  cwd="$(printf '%s' "$HERDR_PLUGIN_CONTEXT_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(j.focused_pane_cwd||j.workspace_cwd||"")}catch{}})')"
   [ -n "$cwd" ] && [ -d "$cwd" ] && start="$cwd"
 fi
 CDPATH= cd -- "$start" || exit 1
