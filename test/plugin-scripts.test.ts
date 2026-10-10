@@ -55,3 +55,13 @@ test("run.sh skips a Node older than 18 and falls back to Bun", async () => {
   expect((await new Response(p.stdout).text()).trim()).toMatch(/^maidog \d+\.\d+\.\d+$/);
   expect(await p.exited).toBe(0);
 });
+
+test("CI and release pin the Bun version that builds the committed bundle", () => {
+  const pkg = JSON.parse(readFileSync("package.json", "utf8"));
+  const pinned = pkg.engines?.bun;
+  expect(pinned).toMatch(/^\d+\.\d+\.\d+$/);
+  for (const wf of [".github/workflows/ci.yml", ".github/workflows/release.yml"]) {
+    expect(readFileSync(wf, "utf8")).toContain(`bun-version: ${pinned}`);
+  }
+  expect(pkg.devDependencies["@types/bun"]).toMatch(/^\d+\.\d+\.\d+$/);
+});
