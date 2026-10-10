@@ -39,3 +39,19 @@ test("preview starts in the focused pane's folder from herdr's context", async (
   expect(await new Response(p.stdout).text()).toContain("maidog preview (in /tmp)");
   await p.exited;
 });
+
+test("run.sh skips a Node older than 18 and falls back to Bun", async () => {
+  const { mkdtempSync, writeFileSync, chmodSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join, dirname } = await import("node:path");
+  const fake = mkdtempSync(join(tmpdir(), "oldnode-"));
+  writeFileSync(join(fake, "node"), '#!/bin/sh\ncase "$1" in -p) echo 16 ;; *) echo "old node ran" ; exit 9 ;; esac\n');
+  chmodSync(join(fake, "node"), 0o755);
+  const bunDir = dirname(process.execPath);
+  const p = Bun.spawn(["/bin/sh", "scripts/run.sh", "--version"], {
+    stdout: "pipe",
+    env: { ...process.env, PATH: `${fake}:${bunDir}:/usr/bin:/bin` },
+  });
+  expect((await new Response(p.stdout).text()).trim()).toMatch(/^maidog \d+\.\d+\.\d+$/);
+  expect(await p.exited).toBe(0);
+});

@@ -8,8 +8,12 @@ node_ok() {
   command -v node >/dev/null 2>&1 &&
     [ "$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)" -ge 18 ]
 }
-if node_ok || command -v bun >/dev/null 2>&1; then
-  echo "maidog: using $(command -v node || command -v bun) with dist/maidog.js"
+if node_ok; then
+  echo "maidog: using $(command -v node) with dist/maidog.js"
+  exit 0
+fi
+if command -v bun >/dev/null 2>&1; then
+  echo "maidog: using $(command -v bun) with dist/maidog.js"
   exit 0
 fi
 
