@@ -1,0 +1,22 @@
+{
+  "name": "maidog",
+  "version": "0.1.0",
+  "description": "Render Mermaid diagrams as Unicode art in your terminal markdown viewer.",
+  "license": "MIT",
+  "author": "Elber Ribeiro <elber@dynaum.com>",
+  "repository": { "type": "git", "url": "git+https://github.com/dynaum/maidog.git" },
+  "homepage": "https://github.com/dynaum/maidog#readme",
+  "keywords": ["mermaid", "markdown", "terminal", "ascii", "glow", "herdr", "cli"],
+  "type": "module",
+  "bin": { "maidog": "dist/maidog.js" },
+  "files": ["dist/maidog.js", "README.md", "LICENSE"],
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "bundle": "bun build src/cli.ts --target node --minify --banner '#!/usr/bin/env node' --outfile dist/maidog.js",
+    "check": "bun run typecheck && bun test && bun run bundle && git diff --exit-code dist/maidog.js"
+  },
+  "dependencies": { "beautiful-mermaid": "1.1.3" },
+  "devDependencies": { "@types/node": "^22", "@types/bun": "latest", "typescript": "^5.6" }
+}
