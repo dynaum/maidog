@@ -33,7 +33,7 @@ Setup does three things:
 
 The viewer reads its config from `herdr plugin config-dir herdr-file-viewer`, which is usually `~/.config/herdr/plugins/config/herdr-file-viewer/config.toml`. When herdr does not answer, setup falls back to `~/.config/herdr-file-viewer/config.toml`.
 
-Before each write, setup saves the old file as `config.toml.maidog-backup`. Running setup again is safe. Setup updates its own line and leaves the rest alone.
+The first time setup changes the file, it saves the original as `config.toml.maidog-backup`. Later runs never replace that backup. Running setup again is safe. Setup updates its own line and leaves the rest alone.
 
 ### You already use a custom markdown renderer
 
@@ -43,7 +43,7 @@ Setup stops and tells you. Your config stays unchanged. To replace your renderer
 herdr plugin action invoke maidog.setup-file-viewer-force
 ```
 
-Your old line stays in `config.toml.maidog-backup`.
+Setup saves your config as `config.toml.maidog-backup` first. Later runs keep that first backup, so your original line stays safe.
 
 ## Updates
 

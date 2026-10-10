@@ -22,17 +22,19 @@ export async function setup(deps: Deps, force: boolean): Promise<Outcome> {
   const style = copyPalette(viewer, runtime);
   const configPath = viewerConfigPath(deps);
   const current = existsSync(configPath) ? readFileSync(configPath, "utf8") : null;
-  if (current !== null) copyFileSync(configPath, `${configPath}.maidog-backup`);
 
   const result = upsertMarkdown(current, markdownCommand(bin, style), force);
   writeFileSync(join(runtime, ".setup"), configPath);
   if (result.kind === "conflict") {
     return {
       code: 1,
-      message: `maidog: the viewer already uses a custom markdown renderer (${result.existing}). Run "maidog herdr setup --force" to replace it. Your old line is kept in config.toml.maidog-backup.`,
+      message: `maidog: the viewer already uses a custom markdown renderer (${result.existing}). Run "maidog herdr setup --force" to replace it. A backup of your config is saved first.`,
     };
   }
   if (result.kind !== "unchanged") {
+    // Keep the first backup: later runs must not replace the user's original config with maidog's own.
+    const backup = `${configPath}.maidog-backup`;
+    if (current !== null && !existsSync(backup)) copyFileSync(configPath, backup);
     mkdirSync(dirname(configPath), { recursive: true });
     atomicWrite(configPath, result.text);
   }
@@ -57,9 +59,10 @@ function installRuntime(deps: Deps, runtime: string): string {
   mkdirSync(runtime, { recursive: true });
   const bin = join(runtime, "maidog");
   if (deps.isBundle) {
-    const js = join(runtime, "maidog.js");
+    // .mjs: the state dir has no package.json, and Node before 22 would load a .js file as CommonJS.
+    const js = join(runtime, "maidog.mjs");
     atomicCopy(deps.selfPath, js);
-    atomicWrite(bin, `#!/bin/sh\nexec "${deps.nodePath}" "${js}" "$@"\n`);
+    atomicWrite(bin, `#!/bin/sh\nexec ${shellQuote(deps.nodePath)} ${shellQuote(js)} "$@"\n`);
   } else {
     atomicCopy(deps.selfPath, bin);
   }
@@ -109,6 +112,11 @@ function viewerConfigPath(deps: Deps): string {
   return dir ? join(dir, "config.toml") : fallbackViewerConfig(deps.env);
 }
 
+// Single quotes stop the shell from expanding $, backticks and backslashes in a path.
+function shellQuote(s: string): string {
+  return `'${s.replace(/'/g, "'\\''")}'`;
+}
+
 function atomicWrite(path: string, text: string): void {
   const tmp = `${path}.tmp-${process.pid}`;
   writeFileSync(tmp, text);
@@ -124,7 +132,7 @@ function atomicCopy(from: string, to: string): void {
 function realDeps(): Deps {
   const herdrBin = process.env.HERDR_BIN_PATH || "herdr";
   const self = fileURLToPath(import.meta.url);
-  const isBundle = self.endsWith(".js");
+  const isBundle = /\.m?js$/.test(self);
   return {
     env: process.env,
     herdr: (args) => {
