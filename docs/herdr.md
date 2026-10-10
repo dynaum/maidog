@@ -33,7 +33,7 @@ Setup does three things:
 
 The viewer reads its config from `herdr plugin config-dir herdr-file-viewer`, which is usually `~/.config/herdr/plugins/config/herdr-file-viewer/config.toml`. When herdr does not answer, setup falls back to `~/.config/herdr-file-viewer/config.toml`.
 
-The first time setup changes the file, it saves the original as `config.toml.maidog-backup`. Later runs never replace that backup. Running setup again is safe. Setup updates its own line and leaves the rest alone.
+The first time setup changes the file, it saves the original as `config.toml.maidog-backup`. Later runs never replace the backup. Running setup again is safe. Setup updates its own line and leaves the rest alone.
 
 ### You already use a custom markdown renderer
 
@@ -97,6 +97,10 @@ description = "maidog preview"
 
 - Look for a note under the block. A line such as `> maidog: pie diagrams are not supported yet` means maidog ran but does not support the type.
 
+### A wide diagram shows as code in a narrow pane
+
+maidog fits each diagram to the pane: a wide flowchart turns top-down, and the spacing tightens. A diagram that still does not fit stays as source with a note, because glow would wrap the lines and break the boxes. Press `w` in the viewer for the full-width view: the viewer then renders without a width limit, maidog draws the whole diagram, and you scroll sideways.
+
 ### Setup says the viewer ignores config files
 
 herdr-file-viewer reads `config.toml` from version 1.12.0 on. Update the viewer, then reopen it:
@@ -111,7 +115,7 @@ The viewer opens files with uncommitted or branch changes as a diff. Press `v` t
 
 ### "Markdown renderer timed out"
 
-The viewer stops a renderer after 5 seconds. maidog draws a typical file in well under a second. A file with dozens of large diagrams takes longer. Split the file, or open it with the preview popup, which has no time limit.
+The viewer stops a renderer after 5 seconds. maidog stops itself after 3 seconds and keeps any unfinished diagram as source, so this message means something else ran slow, such as a cold Node start on a busy machine. A very long single chain (25 steps or more) hits a slow path in the drawing library and always shows as source.
 
 ### "Markdown renderer failed"
 

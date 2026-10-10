@@ -49,6 +49,15 @@ The rewrite never changes text inside quotes, brackets, or `|labels|`. `A["a-->b
 
 beautiful-mermaid lays out the diagram and returns text. maidog trims trailing spaces and wraps the result in a `text` fence. When the diagram itself contains backticks, the fence grows longer so markdown stays valid.
 
+When a width applies (`--max-width`, or glow's `-w`), maidog tries layouts in order and keeps the first one that fits:
+
+1. The diagram as written.
+2. A left-right flowchart turned top-down (`LR` to `TD`, `RL` to `BT`).
+3. The same two with horizontal spacing cut to 2.
+4. The same two with spacing cut to 1 across and 2 down.
+
+maidog draws in a child process. The parent stops it after the time limit (3 seconds by default) and keeps every diagram finished by then. beautiful-mermaid's layout runs for 12 seconds on a single 25-step chain, so the limit matters.
+
 ## 5. Fall back
 
 maidog never drops content. When a block cannot be drawn, the original block stays and one note follows it:
@@ -60,12 +69,13 @@ maidog never drops content. When a block cannot be drawn, the original block sta
 | `> maidog: renderer returned an empty diagram` | The parser accepted the block but drew nothing |
 | `> maidog: empty diagram` | The block holds only blank lines or comments |
 | `> maidog: diagram too large to render (limit 300 lines or 20000 characters)` | Size cap |
-| `> maidog: diagram is N columns wide (limit M)` | `--max-width` cap |
+| `> maidog: diagram needs N columns but only M fit. Widen the pane or view it full width.` | No layout fits the width |
+| `> maidog: diagram took too long to draw (over 3 s)` | Time limit |
 
 ## Security model
 
 - Content arrives on stdin only. maidog never reads a path from the document.
 - maidog strips control bytes from diagram source and output.
-- The size cap bounds layout time, which matters inside herdr-file-viewer's 5 second renderer limit.
+- maidog draws in a child process and stops the child after 3 seconds, inside herdr-file-viewer's 5 second renderer limit. The size cap also bounds layout work.
 - herdr-file-viewer strips everything except color codes from renderer output, so the viewer adds a second layer of protection.
 - `maidog herdr setup` writes two places only: its own state folder and the viewer's config file, after a backup.

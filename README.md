@@ -23,7 +23,8 @@ Same file. Same viewer. One extra word in front of the command.
 - Terminal markdown viewers show those blocks as code, so you open a browser to read a picture.
 - maidog draws each diagram as Unicode box art where the code block was.
 - No browser, no image protocol, no GPU. Works in any terminal, over SSH, and inside tmux or herdr.
-- Diagrams render in about 100 ms, so the tool stays out of your way.
+- Diagrams fit your pane. A wide flowchart turns top-down in a narrow split instead of wrapping into broken boxes.
+- A typical file renders in about 150 ms, so the tool stays out of your way.
 
 ## Set up herdr in 30 seconds
 
@@ -74,6 +75,7 @@ Agents do not write textbook Mermaid. maidog fixes the common slips before drawi
 - `A --> |label| B` with a space before the label
 - `<b>`, `<i>`, and `<br>` tags inside labels
 - YAML frontmatter at the top of the block
+- diagrams wider than the pane: maidog flips the layout or tightens the spacing to fit
 - `flowchart` with no direction, or a trailing `;` on the header
 
 When maidog meets a diagram beyond its reach, the code stays in place with a short note below. Your document never loses content.
@@ -82,7 +84,7 @@ When maidog meets a diagram beyond its reach, the code stays in place with a sho
 
 - maidog reads stdin and writes stdout. Your files stay untouched.
 - maidog strips escape and control bytes from diagram labels, so a hostile file never drives your terminal.
-- maidog skips diagrams over 300 lines or 20,000 characters, so a huge block never stalls your viewer.
+- maidog stops drawing after 3 seconds and skips diagrams over 300 lines or 20,000 characters, so a slow or huge block never stalls your viewer.
 
 [docs/how-it-works.md](docs/how-it-works.md) walks through the whole pipeline.
 

@@ -32,7 +32,8 @@ maidog herdr refresh                       re-copy the runtime after an update
 | Option | Default | Effect |
 |---|---|---|
 | `--ascii` | off | Draw with `+ - \| >` instead of box-drawing characters. Use this for fonts or terminals without box glyphs. |
-| `--max-width <cols>` | `0` (no limit) | Keep diagrams wider than `<cols>` as source, with a note. |
+| `--max-width <cols>` | glow's `-w` minus 4, else no limit | Fit each diagram into `<cols>` columns. maidog flips a left-right flowchart top-down, then tightens the spacing. A diagram that still does not fit stays as source, with a note. |
+| `--time-limit <ms>` | `3000` | Stop drawing after `<ms>` for the whole file. Diagrams not finished stay as source, with a note. `0` removes the limit. |
 | `--padding-x <n>` | `5` | Horizontal space between nodes. |
 | `--padding-y <n>` | `5` | Vertical space between nodes. Lower values give compact diagrams. |
 | `-h`, `--help` | | Show help. |
@@ -47,6 +48,12 @@ maidog --padding-x 2 --padding-y 2 < plan.md
 ```
 
 `--opt=value` works too: `maidog --max-width=100 < plan.md`.
+
+### Fitting the width
+
+When the command is glow with `-w N` or `--width N`, maidog fits diagrams into `N - 4` columns on its own, because glow wraps longer lines and breaks the boxes. `-w 0` means no limit. An explicit `--max-width` wins.
+
+Sequence diagrams have a fixed width. A sequence diagram wider than the limit stays as source.
 
 ## Piping into another command
 
