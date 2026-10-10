@@ -18,3 +18,11 @@ test("ten diagrams render in under a second", () => {
   transformMarkdown(block.repeat(10), DEFAULT_RENDER_OPTIONS);
   expect(performance.now() - start).toBeLessThan(1000);
 });
+
+test("fallback blocks never pass escape or control bytes through", () => {
+  const md = "```mermaid\ngraph XY\n  A[\"\u001b]0;pwned\u0007\u001b[8mhidden\"] --> B\n```\n";
+  const out = transformMarkdown(md, DEFAULT_RENDER_OPTIONS);
+  expect(out).toContain("> maidog: could not parse diagram");
+  expect(out).not.toMatch(/[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/);
+  expect(out).toContain("]0;pwned");
+});

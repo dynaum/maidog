@@ -1,4 +1,6 @@
 // Finds CommonMark fenced code blocks and swaps mermaid ones for rendered text fences.
+import { sanitizeSource } from "./normalize";
+
 export type BlockResult = { ok: true; text: string } | { ok: false; reason: string };
 export type BlockRenderer = (source: string) => BlockResult;
 
@@ -42,7 +44,8 @@ export function replaceMermaidFences(markdown: string, render: BlockRenderer): s
         for (const line of result.text.split("\n")) out.push(indent + line);
         out.push(`${indent}${ticks}`);
       } else {
-        out.push(...block, "", `${indent}> maidog: ${result.reason}`);
+        // The kept source is untrusted too: strip control bytes so it never drives the terminal.
+        out.push(...block.map(sanitizeSource), "", `${indent}> maidog: ${result.reason}`);
       }
     }
     i = j + 1;
