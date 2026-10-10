@@ -49,6 +49,15 @@ describe("normalizeMermaid", () => {
     expect(normalizeMermaid(seq)).toBe(seq);
   });
 
+  test("defaults a missing flowchart direction to TD", () => {
+    expect(normalizeMermaid("flowchart\n  A --> B")).toBe("flowchart TD\n  A --> B");
+    expect(normalizeMermaid("graph\nA --> B")).toBe("graph TD\nA --> B");
+  });
+
+  test("drops a trailing semicolon from the header", () => {
+    expect(normalizeMermaid("flowchart LR;\n  A --> B")).toBe("flowchart LR\n  A --> B");
+  });
+
   test("normalizes graph headers too", () => {
     expect(normalizeMermaid("graph TD\nA-->B")).toBe("graph TD\nA --> B");
   });

@@ -1,0 +1,62 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`sample document renders supported diagrams and notes the rest 1`] = `
+"# Release flow
+
+\`\`\`text
+┌─────────────┐
+│             │
+│     Plan    │
+│             │
+└──────┬──────┘
+       │
+       │
+       ├─────────┐
+       │         │
+       ▼         │
+◇─────────────◇  │
+│             │  │
+│ Tests pass? ├──┼─────┐
+│             │  │     │
+◇──────┬──────◇  │    no
+       │         │     │
+      yes        │     │
+       │         │     │
+       │         │     │
+       ▼         │     ▼
+┌─────────────┐  │  ┌─────┐
+│             │  │  │     │
+│     Ship    │  │  │ Fix │
+│             │  │  │     │
+└─────────────┘  │  └──┬──┘
+                 │     │
+                 └─────┘
+\`\`\`
+
+\`\`\`text
+┌──────┐          ┌────────┐             ┌────────┐
+│ User │          │ Viewer │             │ maidog │
+└───┬──┘          └────┬───┘             └────┬───┘
+    │                  │                      │
+    │  open notes.md   │                      │
+    │──────────────────▶                      │
+    │                  │                      │
+    │                  │  markdown on stdin   │
+    │                  │──────────────────────▶
+    │                  │                      │
+    │                  │  diagrams as text    │
+    │                  ◀╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌│
+    │                  │                      │
+┌───┴──┐          ┌────┴───┐             ┌────┴───┐
+│ User │          │ Viewer │             │ maidog │
+└──────┘          └────────┘             └────────┘
+\`\`\`
+
+\`\`\`mermaid
+pie
+  "a": 1
+\`\`\`
+
+> maidog: pie diagrams are not supported yet
+"
+`;

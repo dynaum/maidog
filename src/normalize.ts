@@ -17,8 +17,17 @@ export function normalizeMermaid(src: string): string {
   const headerAt = lines.findIndex((l) => l.trim() !== "" && !l.trim().startsWith("%%"));
   if (headerAt < 0 || !/^\s*(?:graph|flowchart)\b/.test(lines[headerAt])) return lines.join("\n");
   return lines
-    .map((line, idx) => (idx <= headerAt || SKIP_LINE.test(line) ? line : fixFlowLine(line)))
+    .map((line, idx) => {
+      if (idx === headerAt) return fixHeader(line);
+      return idx < headerAt || SKIP_LINE.test(line) ? line : fixFlowLine(line);
+    })
     .join("\n");
+}
+
+// beautiful-mermaid rejects a header without a direction or with a trailing ";".
+function fixHeader(line: string): string {
+  const m = /^(\s*)(graph|flowchart)\s*(TD|TB|BT|RL|LR)?\s*;?\s*$/.exec(line);
+  return m ? `${m[1]}${m[2]} ${m[3] ?? "TD"}` : line;
 }
 
 function stripFrontmatter(lines: string[]): string[] {
