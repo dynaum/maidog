@@ -1,0 +1,25 @@
+name: release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  binaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: |
+          set -euo pipefail
+          mkdir -p out
+          for t in darwin-arm64 darwin-x64 linux-x64 linux-arm64; do
+            bun build src/cli.ts --compile --minify --target "bun-$t" --outfile "out/maidog-$t"
+          done
+          cp dist/maidog.js out/maidog.js
+          (cd out && shasum -a 256 * > SHA256SUMS)
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: out/*
+          generate_release_notes: true

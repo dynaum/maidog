@@ -1,0 +1,16 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with: { node-version: 18 }
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+      - run: printf '```mermaid\nflowchart LR\n  A-->B\n```\n' | node dist/maidog.js | grep -q '►'
