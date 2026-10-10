@@ -6,6 +6,7 @@ maidog reads markdown on stdin, draws every Mermaid block as Unicode box art, an
 
 | Method | Command | Needs |
 |---|---|---|
+| Homebrew | `brew install dynaum/tap/maidog` | Nothing |
 | npx | `npx maidog < plan.md` | Node 18+ |
 | npm | `npm install -g maidog` | Node 18+ |
 | Bun | `bunx maidog < plan.md` | Bun |

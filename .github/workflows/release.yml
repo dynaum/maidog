@@ -2,10 +2,17 @@ name: release
 on:
   push:
     tags: ["v*"]
+  # Re-runs only the tap update for an existing release, e.g. after fixing the tap.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to point the Homebrew formula at, e.g. v0.1.0"
+        required: true
 permissions:
   contents: write
 jobs:
   binaries:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,3 +31,65 @@ jobs:
         with:
           files: out/*
           generate_release_notes: true
+
+  # The formula lives in dynaum/homebrew-tap. Without this job a release ships while
+  # `brew install dynaum/tap/maidog` keeps handing out the previous version.
+  tap:
+    name: Update the Homebrew tap
+    needs: binaries
+    if: always() && (needs.binaries.result == 'success' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      # A missing key would make the push a silent no-op. Fail before touching anything.
+      - name: The deploy key must be present
+        env:
+          TAP_DEPLOY_KEY: ${{ secrets.TAP_DEPLOY_KEY }}
+        run: |
+          if [ -z "${TAP_DEPLOY_KEY}" ]; then
+            echo "::error::TAP_DEPLOY_KEY is not set, so the formula cannot be pushed."
+            exit 1
+          fi
+
+      - name: Regenerate the formula and push it
+        env:
+          TAP_DEPLOY_KEY: ${{ secrets.TAP_DEPLOY_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          key="$(mktemp)"
+          printf '%s\n' "${TAP_DEPLOY_KEY}" > "$key"
+          chmod 600 "$key"
+          trap 'rm -f "$key"' EXIT
+          export GIT_SSH_COMMAND="ssh -i $key -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes -F /dev/null"
+
+          git clone git@github.com:dynaum/homebrew-tap.git tap
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # The tap owns the formula template, so the two repos cannot drift apart.
+          ./update-maidog-formula.sh "${TAG#v}"
+
+          if git diff --quiet; then
+            echo "formula already serves ${TAG}, nothing to push"
+            exit 0
+          fi
+          git commit -am "maidog ${TAG#v}"
+          git push
+
+      # A push can succeed and still leave the tap wrong. Read it back and compare.
+      - name: The tap must serve this tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          formula="$(gh api repos/dynaum/homebrew-tap/contents/Formula/maidog.rb -H 'Accept: application/vnd.github.raw')"
+          sums="$(gh release download "${TAG}" --repo dynaum/maidog --pattern SHA256SUMS --output -)"
+          for t in darwin-arm64 darwin-x64 linux-x64 linux-arm64; do
+            sha="$(awk -v f="maidog-$t" '$2 == f {print $1}' <<<"$sums")"
+            grep -q "releases/download/${TAG}/maidog-$t\"" <<<"$formula" || { echo "::error::formula does not point at ${TAG} for $t"; exit 1; }
+            grep -q "sha256 \"$sha\"" <<<"$formula" || { echo "::error::formula checksum for $t does not match ${TAG}"; exit 1; }
+          done
+          echo "tap serves ${TAG}"

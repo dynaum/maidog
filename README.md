@@ -45,7 +45,13 @@ npx maidog glow -s dark -w 0 - < plan.md  # render with glow
 npx maidog less -R < plan.md              # page through it
 ```
 
-Install with `npm install -g maidog`, or grab a single binary with no runtime needed:
+Install with Homebrew:
+
+```bash
+brew install dynaum/tap/maidog
+```
+
+Or with `npm install -g maidog`, or grab a single binary with no runtime needed:
 
 ```bash
 curl -fsSL -o maidog https://github.com/dynaum/maidog/releases/latest/download/maidog-$(uname -s | tr A-Z a-z)-$(uname -m | sed 's/x86_64/x64/;s/aarch64/arm64/')
